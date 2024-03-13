@@ -12,6 +12,7 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
 import LottieView from "lottie-react-native";
+import { manipulateAsync } from "expo-image-manipulator";
 
 const Home = (props) => {
   const [image, setImage] = useState(null);
@@ -28,9 +29,12 @@ const Home = (props) => {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: true,
       aspect: [4, 3],
-      quality: 1,
+      quality: 0.2,
     });
-    console.log(result);
+    const manipResult = await manipulateAsync(result.assets[0].uri, [
+      { crop: { height: 256, width: 256, originX: 0, originY: 0 } },
+    ]);
+    console.log("======>", manipResult);
     if (!result.canceled) {
       setImage(result.assets[0].uri);
     }
@@ -43,7 +47,8 @@ const Home = (props) => {
       allowsEditing: true,
       aspect: [3, 3],
     });
-    console.log(result);
+    console.info(result);
+    console.log(result.assets[0].uri);
     if (!result.cancelled) {
       setImage(result.assets[0].uri);
     }
@@ -66,13 +71,22 @@ const Home = (props) => {
     let match = /\.(\w+)$/.exec(filename);
     let type = match ? `image/${match[1]}` : `image`;
     let formData = new FormData();
-    formData.append("photo", { uri: localUri, name: filename, type });
+    formData.append("file", {
+      uri: localUri,
+      name: "image.jpg",
+      type: "image/jpeg",
+    });
     try {
       const response = await axios.post(
-        "https://www.toptal.com/developers/postbin/1710217994009-0808786954730",
+        "https://ace3-49-205-244-103.ngrok-free.app/predict",
         formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
       );
-      console.log("response", response.data, response.status);
+      console.log("response", response.data);
       showLoader(false);
     } catch (error) {
       console.log("error", error);
